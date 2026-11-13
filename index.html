@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ORTO MARKET — Маркетплейс Орто-Сая</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    body { background: #f2f4f7; color: #111; padding-bottom: 80px; }
+    header { background: #16a34a; color: #fff; padding: 16px; position: sticky; top: 0; z-index: 10; box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
+    header h1 { font-size: 20px; font-weight: 800; letter-spacing: 0.5px; }
+    header p { font-size: 12px; opacity: 0.9; margin-top: 2px; }
+    .search-box { padding: 12px 16px; background: #fff; border-bottom: 1px solid #e5e7eb; }
+    .search-box input { width: 100%; padding: 10px 14px; border: 1px solid #d1d5db; border-radius: 10px; font-size: 15px; outline: none; }
+    .categories { display: flex; gap: 8px; overflow-x: auto; padding: 12px 16px; background: #fff; border-bottom: 1px solid #e5e7eb; scrollbar-width: none; }
+    .categories::-webkit-scrollbar { display: none; }
+    .cat-btn { padding: 7px 14px; border-radius: 20px; border: 1px solid #d1d5db; background: #f9fafb; font-size: 13px; white-space: nowrap; cursor: pointer; font-weight: 500; }
+    .cat-btn.active { background: #16a34a; color: #fff; border-color: #16a34a; }
+    .container { padding: 14px 16px; max-width: 600px; margin: 0 auto; }
+    .card { background: #fff; border-radius: 14px; padding: 15px; margin-bottom: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
+    .card-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
+    .card-title { font-size: 16px; font-weight: 700; }
+    .card-price { font-size: 16px; font-weight: 800; color: #16a34a; white-space: nowrap; }
+    .card-meta { font-size: 12px; color: #6b7280; margin: 6px 0; }
+    .card-desc { font-size: 14px; color: #374151; line-height: 1.4; margin-bottom: 12px; }
+    .btn-wa { display: block; text-align: center; background: #25D366; color: #fff; text-decoration: none; padding: 11px; border-radius: 10px; font-weight: 600; font-size: 14px; }
+    .fab { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #111827; color: #fff; border: none; padding: 14px 24px; border-radius: 30px; font-size: 15px; font-weight: 700; box-shadow: 0 4px 14px rgba(0,0,0,0.25); cursor: pointer; z-index: 20; width: 90%; max-width: 360px; }
+    .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 30; align-items: flex-end; }
+    .modal.open { display: flex; }
+    .modal-content { background: #fff; width: 100%; border-radius: 20px 20px 0 0; padding: 20px; max-height: 90vh; overflow-y: auto; }
+    .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+    .modal-header h2 { font-size: 18px; }
+    .close-btn { background: none; border: none; font-size: 24px; cursor: pointer; color: #6b7280; }
+    .form-group { margin-bottom: 12px; }
+    .form-group label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 4px; color: #374151; }
+    .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 10px; font-size: 15px; }
+    .submit-btn { width: 100%; background: #16a34a; color: #fff; border: none; padding: 13px; border-radius: 10px; font-size: 16px; font-weight: 700; cursor: pointer; margin-top: 6px; }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>ORTO MARKET</h1>
+  <p>Товары и услуги Орто-Сая • Бишкек</p>
+</header>
+
+<div class="search-box">
+  <input type="text" id="searchInput" placeholder="Поиск товаров и услуг..." oninput="renderItems()">
+</div>
+
+<div class="categories" id="categoryList">
+  <button class="cat-btn active" onclick="setCategory('Все', this)">Все</button>
+  <button class="cat-btn" onclick="setCategory('Продукты', this)">Продукты</button>
+  <button class="cat-btn" onclick="setCategory('Одежда и обувь', this)">Одежда и обувь</button>
+  <button class="cat-btn" onclick="setCategory('Электроника', this)">Электроника</button>
+  <button class="cat-btn" onclick="setCategory('Для дома', this)">Для дома</button>
+  <button class="cat-btn" onclick="setCategory('Услуги', this)">Услуги</button>
+</div>
+
+<div class="container" id="itemsContainer"></div>
+
+<button class="fab" onclick="openModal()">+ Разместить товар / услугу</button>
+
+<div class="modal" id="addModal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2>Новое объявление</h2>
+      <button class="close-btn" onclick="closeModal()">&times;</button>
+    </div>
+    <div class="form-group">
+      <label>Название товара или услуги</label>
+      <input type="text" id="itemTitle" placeholder="Например: Свежая клубника 1 кг">
+    </div>
+    <div class="form-group">
+      <label>Категория</label>
+      <select id="itemCat">
+        <option value="Продукты">Продукты</option>
+        <option value="Одежда и обувь">Одежда и обувь</option>
+        <option value="Электроника">Электроника</option>
+        <option value="Для дома">Для дома</option>
+        <option value="Услуги">Услуги</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Цена (в сомах)</label>
+      <input type="number" id="itemPrice" placeholder="250">
+    </div>
+    <div class="form-group">
+      <label>Получение</label>
+      <select id="itemDelivery">
+        <option value="Самовывоз (Орто-Сай)">Самовывоз (Орто-Сай)</option>
+        <option value="Доставка по договорённости">Доставка по договорённости</option>
+        <option value="Самовывоз и доставка">Самовывоз и доставка</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Описание</label>
+      <textarea id="itemDesc" rows="2" placeholder="Ряд, контейнер или условия..."></textarea>
+    </div>
+    <div class="form-group">
+      <label>Номер WhatsApp (без +)</label>
+      <input type="tel" id="itemPhone" placeholder="996555123456">
+    </div>
+    <button class="submit-btn" onclick="addItem()">Опубликовать</button>
+  </div>
+</div>
+
+<script>
+  const defaultItems = [
+    { title: "Свежие овощи и зелень (набор)", cat: "Продукты", price: "350", delivery: "Самовывоз и доставка", desc: "Орто-Сайский рынок, центральный вход. Соберём свежий пакет под заказ.", phone: "996555000111" },
+    { title: "Ремонт смартфонов и замена экранов", cat: "Услуги", price: "1000", delivery: "Самовывоз (Орто-Сай)", desc: "Быстрый ремонт за 30 минут возле ТЦ Оберон.", phone: "996700000222" },
+    { title: "Кроссовки мужские (размеры 40-44)", cat: "Одежда и обувь", price: "2200", delivery: "Доставка по договорённости", desc: "Новые, хорошее качество. Вещевой ряд, контейнер 45.", phone: "996500000333" }
+  ];
+
+  let items = JSON.parse(localStorage.getItem('orto_items')) || defaultItems;
+  let currentCat = 'Все';
+
+  function setCategory(cat, btn) {
+    currentCat = cat;
+    document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    renderItems();
+  }
+
+  function renderItems() {
+    const query = document.getElementById('searchInput').value.toLowerCase();
+    const container = document.getElementById('itemsContainer');
+    container.innerHTML = '';
+
+    const filtered = items.filter(item => {
+      const matchCat = currentCat === 'Все' || item.cat === currentCat;
+      const matchText = item.title.toLowerCase().includes(query) || item.desc.toLowerCase().includes(query);
+      return matchCat && matchText;
+    });
+
+    if (filtered.length === 0) {
+      container.innerHTML = '<p style="text-align:center;color:#6b7280;margin-top:30px;">Ничего не найдено</p>';
+      return;
+    }
+
+    filtered.forEach(item => {
+      const waText = encodeURIComponent(`Здравствуйте! Пишу с ORTO MARKET по поводу: ${item.title}`);
+      container.innerHTML += `
+        <div class="card">
+          <div class="card-top">
+            <div class="card-title">${item.title}</div>
+            <div class="card-price">${item.price} сом</div>
+          </div>
+          <div class="card-meta">${item.cat} • ${item.delivery}</div>
+          <div class="card-desc">${item.desc}</div>
+          <a class="btn-wa" href="https://wa.me{item.phone}?text=${waText}" target="_blank">Написать в WhatsApp</a>
+        </div>
+      `;
+    });
+  }
+
+  function openModal() { document.getElementById('addModal').classList.add('open'); }
+  function closeModal() { document.getElementById('addModal').classList.remove('open'); }
+
+  function addItem() {
+    const title = document.getElementById('itemTitle').value.trim();
+    const cat = document.getElementById('itemCat').value;
+    const price = document.getElementById('itemPrice').value.trim();
+    const delivery = document.getElementById('itemDelivery').value;
+    const desc = document.getElementById('itemDesc').value.trim();
+    const phone = document.getElementById('itemPhone').value.replace(/\D/g, '');
+
+    if (!title || !price || !phone) {
+      alert('Заполните название, цену и номер WhatsApp');
+      return;
+    }
+
+    items.unshift({ title, cat, price, delivery, desc, phone });
+    localStorage.setItem('orto_items', JSON.stringify(items));
+    closeModal();
+    renderItems();
+  }
+
+  renderItems();
+</script>
+</body>
+</html>
